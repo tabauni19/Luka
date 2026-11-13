@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
-  // En GitHub Pages la app vive en /luka/; en local y en Android, en la raíz.
+  // En GitHub Pages se usa BASE_PATH=./ (rutas relativas); en local y en Android, la raíz.
   base: process.env.BASE_PATH ?? '/',
   plugins: [
     react(),
