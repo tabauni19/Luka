@@ -112,6 +112,8 @@ export interface Settings {
   /** Fecha del próximo pago fijada a mano (gana sobre payDays si es futura). */
   nextPayDateOverride?: ISODate;
   theme: 'system' | 'light' | 'dark';
+  /** Si es false, lo separado para metas NO se resta del disponible (las metas van aparte). */
+  goalsReduceAvailable?: boolean;
   demoMode: boolean;
   /** Las fechas de pago las puso el modo demo (se quitan al borrarlo). */
   demoPayDays?: boolean;

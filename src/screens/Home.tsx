@@ -125,9 +125,15 @@ export function HomeScreen(props: {
         {showBreakdown && (
           <dl className="breakdown">
             <div><dt>Saldo en cuentas</dt><dd><Money value={av.liquid} /></dd></div>
-            <div><dt>− Separado para metas</dt><dd><Money value={-av.reservedGoals} /></dd></div>
+            {!av.goalsExcluded && <div><dt>− Separado para metas</dt><dd><Money value={-av.reservedGoals} /></dd></div>}
             <div><dt>− Compromisos pendientes</dt><dd><Money value={-av.pendingCommitments} /></dd></div>
             <div className="total"><dt>= Disponible</dt><dd><Money value={av.available} /></dd></div>
+            {data.goals.length > 0 && (
+              <label className="check light-check">
+                <input type="checkbox" checked={!av.goalsExcluded} onChange={(e) => mutate((r) => r.saveSettings({ goalsReduceAvailable: e.target.checked }))} />
+                Descontar lo separado para metas
+              </label>
+            )}
             {t.debt > 0 && <div className="note"><dt>Deuda en tarjetas (aparte)</dt><dd><Money value={t.debt} /></dd></div>}
           </dl>
         )}

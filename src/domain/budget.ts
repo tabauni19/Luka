@@ -122,6 +122,8 @@ export interface Availability {
   periodStart: ISODate | null;
   liquid: number;
   reservedGoals: number;
+  /** true si las metas no se están restando del disponible (ajuste del usuario). */
+  goalsExcluded: boolean;
   pendingCommitments: number;
   pending: CommitmentOccurrence[];
   available: number;
@@ -135,7 +137,8 @@ export interface Availability {
 
 export function availability(data: AppData, today: ISODate): Availability {
   const { liquid } = totals(data);
-  const reservedGoals = reservedForGoals(data);
+  const goalsExcluded = data.settings.goalsReduceAvailable === false;
+  const reservedGoals = goalsExcluded ? 0 : reservedForGoals(data);
   const nextPay = nextPayDate(today, data.settings);
   if (!nextPay) {
     return {
@@ -143,6 +146,7 @@ export function availability(data: AppData, today: ISODate): Availability {
       periodStart: null,
       liquid,
       reservedGoals,
+      goalsExcluded,
       pendingCommitments: 0,
       pending: [],
       available: liquid - reservedGoals,
@@ -163,6 +167,7 @@ export function availability(data: AppData, today: ISODate): Availability {
     periodStart,
     liquid,
     reservedGoals,
+    goalsExcluded,
     pendingCommitments,
     pending,
     available,

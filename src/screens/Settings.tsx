@@ -202,6 +202,15 @@ export function SettingsSheet({ onClose, onNewAccount, onOpenAccount }: { onClos
       </section>
 
       <section className="card">
+        <h3 className="card-title">Disponible</h3>
+        <label className="check">
+          <input type="checkbox" checked={data.settings.goalsReduceAvailable !== false} onChange={(e) => mutate((r) => r.saveSettings({ goalsReduceAvailable: e.target.checked }))} />
+          Descontar del disponible lo separado para metas
+        </label>
+        <p className="muted small">Desactívalo si prefieres ver las metas aparte y que Inicio muestre solo tu plata menos los compromisos de la quincena.</p>
+      </section>
+
+      <section className="card">
         <h3 className="card-title">Apariencia</h3>
         <Segmented label="Tema" value={data.settings.theme} onChange={(t) => mutate((r) => r.saveSettings({ theme: t }))} options={[{ value: 'system', label: 'Sistema' }, { value: 'light', label: 'Claro' }, { value: 'dark', label: 'Oscuro' }]} />
       </section>

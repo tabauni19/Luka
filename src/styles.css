@@ -312,3 +312,6 @@ select.invalid, .amount-input.invalid { border-color: var(--warn); background: c
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+.light-check { font-size: 14px; color: var(--hero-ink); }
+.light-check input { accent-color: var(--accent); }

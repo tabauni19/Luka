@@ -148,6 +148,16 @@ describe('disponible hasta el próximo pago', () => {
     expect(av.perDay).toBe(0);
   });
 
+  it('se puede dejar las metas aparte sin descontarlas del disponible', async () => {
+    await repo.saveSettings({ payDays: [10, 25], goalsReduceAvailable: false });
+    await repo.put('goals', { id: 'g', name: 'Moto', emoji: '🏍️', target: 8_000_000, deadline: '2027-06-01', createdAt: 0 });
+    await repo.put('goalContributions', { id: 'gc', goalId: 'g', amount: 2_600_000, date: TODAY });
+    const av = availability(await repo.load(), TODAY);
+    expect(av.goalsExcluded).toBe(true);
+    expect(av.available).toBe(1_050_000);
+    expect(av.shortfall).toBe(0);
+  });
+
   it('sin fecha de pago pide configurarla', async () => {
     const av = availability(await repo.load(), TODAY);
     expect(av.nextPay).toBeNull();
