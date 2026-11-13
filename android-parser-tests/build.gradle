@@ -1,0 +1,26 @@
+// Prueba en la JVM (sin Android SDK) el parser de notificaciones del módulo nativo.
+// Compila el MISMO archivo que usa la app: android/app/src/main/java/.../NotificationParser.kt
+buildscript {
+    repositories { mavenCentral() }
+    dependencies { classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.22' }
+}
+apply plugin: 'org.jetbrains.kotlin.jvm'
+
+repositories { mavenCentral() }
+
+sourceSets {
+    main {
+        kotlin {
+            srcDirs = ['../android/app/src/main/java']
+            include '**/NotificationParser.kt'
+        }
+    }
+}
+
+dependencies {
+    testImplementation 'org.jetbrains.kotlin:kotlin-test-junit:1.9.22'
+}
+
+java { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach { kotlinOptions.jvmTarget = '17' }
+test { testLogging { events 'passed', 'failed'; exceptionFormat 'full' } }

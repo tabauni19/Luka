@@ -27,6 +27,7 @@ export default defineConfig({
       }
     })
   ],
+  server: { watch: { ignored: ['**/android/**', '**/android-parser-tests/**'] } },
   test: {
     environment: 'node',
     include: ['tests/**/*.test.ts']
