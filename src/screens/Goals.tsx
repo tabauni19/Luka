@@ -34,7 +34,7 @@ function GoalForm({ goal, onClose }: { goal?: Goal; onClose: () => void }) {
     onClose();
   };
   return (
-    <Sheet title={goal ? 'Editar meta' : 'Nueva meta'} onClose={onClose} footer={<div className="row gap">{goal && <button className="btn ghost danger" onClick={remove}><Icon name="trash" size={16} /></button>}<button className="btn primary grow" disabled={!valid} onClick={save}>Guardar</button></div>}>
+    <Sheet title={goal ? 'Editar meta' : 'Nueva meta'} onClose={onClose} footer={<div className="row gap">{goal && <button className="btn ghost danger" onClick={remove}><Icon name="trash" size={16} /> Eliminar meta</button>}<button className="btn primary grow" disabled={!valid} onClick={save}>Guardar</button></div>}>
       <div className="chips">{EMOJIS.map((e) => <button key={e} className={`chip emoji ${e === emoji ? 'on' : ''}`} onClick={() => setEmoji(e)} aria-label={`Ícono ${e}`}>{e}</button>)}</div>
       <Field label="¿Para qué ahorras?"><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Viaje, celular nuevo…" autoFocus={!goal} /></Field>
       <div className="grid2">
@@ -115,7 +115,10 @@ export function GoalsScreen() {
                 <p className="small">
                   {p.remaining === 0 ? '¡Meta cumplida! 🎉' : p.overdue ? <>La fecha ya pasó. Faltan <Money value={p.remaining} />.</> : <>Separa <b><Money value={p.perPeriod} /></b> por quincena ({p.periodsLeft} {p.periodsLeft === 1 ? 'quincena' : 'quincenas'}).</>}
                 </p>
-                <button className="btn ghost block" onClick={() => setContrib(g)}>Aportar o liberar</button>
+                <div className="row gap">
+                  <button className="btn ghost grow" onClick={() => setContrib(g)}>Aportar o liberar</button>
+                  <button className="btn ghost" onClick={() => setEdit(g)}>Editar</button>
+                </div>
               </section>
             );
           })}
