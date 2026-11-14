@@ -315,3 +315,6 @@ select.invalid, .amount-input.invalid { border-color: var(--warn); background: c
 
 .light-check { font-size: 14px; color: var(--hero-ink); }
 .light-check input { accent-color: var(--accent); }
+.acc-list li { display: flex; align-items: center; gap: 2px; }
+.acc-list li .acc { flex: 1; min-width: 0; }
+.icon-btn.eye { flex: none; }

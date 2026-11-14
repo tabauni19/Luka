@@ -197,8 +197,16 @@ export function HomeScreen(props: {
               <button className="acc" onClick={() => props.onOpenAccount(a.id)}>
                 <span className="acc-dot" style={{ background: a.color }} />
                 <span className="grow">{a.name}{a.type === 'credit' && <span className="muted small"> · deuda</span>}</span>
-                <Money value={bal.get(a.id) ?? 0} className={a.type === 'credit' && (bal.get(a.id) ?? 0) > 0 ? 'debt' : ''} />
+                {a.hideBalance ? <span className="money muted">$ •••••</span> : <Money value={bal.get(a.id) ?? 0} className={a.type === 'credit' && (bal.get(a.id) ?? 0) > 0 ? 'debt' : ''} />}
                 <Icon name="chev" size={16} />
+              </button>
+              <button
+                className="icon-btn small eye"
+                aria-label={a.hideBalance ? `Mostrar saldo de ${a.name}` : `Ocultar saldo de ${a.name}`}
+                aria-pressed={!!a.hideBalance}
+                onClick={() => mutate((r) => r.put('accounts', { ...a, hideBalance: !a.hideBalance }))}
+              >
+                <Icon name={a.hideBalance ? 'eyeOff' : 'eye'} size={18} />
               </button>
             </li>
           ))}

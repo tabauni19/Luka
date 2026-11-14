@@ -16,6 +16,8 @@ export interface Account {
   creditLimit?: number;
   color: string;
   archived?: boolean;
+  /** Ocultar el saldo en pantalla (privacidad). No cambia ningún cálculo. */
+  hideBalance?: boolean;
   demo?: boolean;
   createdAt: number;
 }

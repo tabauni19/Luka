@@ -112,7 +112,7 @@ export function AccountDetail({ accountId, onClose, onEditTx }: { accountId: str
     <Sheet title={a.name} onClose={onClose}>
       <div className="acc-hero" style={{ ['--acc' as string]: a.color }}>
         <span className="muted">{a.type === 'credit' ? 'Deuda actual' : 'Saldo'}</span>
-        <Money value={bal} className="big" />
+        {a.hideBalance ? <span className="money big muted">$ •••••</span> : <Money value={bal} className="big" />}
         {a.type === 'credit' && a.creditLimit ? <span className="muted small">Cupo disponible: <Money value={a.creditLimit - bal} /></span> : null}
         <div className="row gap">
           <button className="btn ghost" onClick={() => setEditing(true)}>Editar</button>
