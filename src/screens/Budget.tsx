@@ -75,7 +75,7 @@ function CommitmentForm({ c, onClose }: { c?: Commitment; onClose: () => void })
 
   const save = async () => {
     if (!valid) return;
-    const v: Commitment = { id: c?.id ?? uid(), name: name.trim(), amount: amount!, dayOfMonth: day, secondDay: twice && day2 !== day ? day2 : undefined, categoryId: isCard ? undefined : categoryId, accountId, cardAccountId: isCard ? card : undefined, active: true, demo: c?.demo };
+    const v: Commitment = { id: c?.id ?? uid(), name: name.trim(), amount: amount!, dayOfMonth: day, secondDay: twice && day2 !== day ? day2 : undefined, categoryId: isCard ? undefined : categoryId, accountId, cardAccountId: isCard ? card : undefined, active: true, demo: c?.demo, createdAt: c?.createdAt ?? Date.now() };
     await mutate((r) => r.put('commitments', v));
     toast(c ? 'Compromiso actualizado' : 'Compromiso agregado');
     onClose();

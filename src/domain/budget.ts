@@ -7,7 +7,7 @@
 // Un compromiso pagado ya bajó el saldo líquido (porque al pagarlo se registra
 // el movimiento), así que deja de contarse como pendiente. Así se descuenta UNA sola vez.
 
-import { addDays, addMonths, clampDay, diffDays, formatShort, parseISO } from './dates';
+import { addDays, addMonths, clampDay, diffDays, formatShort, parseISO, toBogotaDate } from './dates';
 import { totals } from './ledger';
 import type { AppData, Commitment, Goal, ISODate } from './types';
 
@@ -96,6 +96,7 @@ export function commitmentOccurrences(
   for (const c of data.commitments) {
     if (!c.active) continue;
     const { y, m } = parseISO(from);
+    const since = c.createdAt ? toBogotaDate(c.createdAt) : undefined;
     for (let k = 0; k <= 13; k++) {
       const first = addMonths(clampDay(y, m, 1), k);
       const p = parseISO(first);
@@ -103,6 +104,7 @@ export function commitmentOccurrences(
       const days = [...new Set([c.dayOfMonth, ...(c.secondDay ? [c.secondDay] : [])].map((d) => clampDay(p.y, p.m, d)))];
       for (const due of days) {
         if (due >= to || due < from) continue;
+        if (since && due < since) continue; // anterior a crear el compromiso
         const isPaid = paid.has(`${c.id}:${due}`);
         out.push({ commitment: c, dueDate: due, paid: isPaid, overdue: !isPaid && due < today });
       }

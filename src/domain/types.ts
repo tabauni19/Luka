@@ -71,6 +71,8 @@ export interface Commitment {
   dayOfMonth: number;
   /** Segundo día del mes si se paga dos veces al mes (quincenal). */
   secondDay?: number;
+  /** Cuándo se creó: las fechas anteriores no cuentan como pendientes (ya las pagaste antes de usar la app). */
+  createdAt?: number;
   categoryId?: string;
   /** Cuenta con la que se paga normalmente. */
   accountId?: string;

@@ -215,6 +215,13 @@ export class Repo {
     await tx.done;
   }
 
+  /** "Ya lo había pagado": la ocurrencia deja de estar pendiente SIN crear movimiento (no toca saldos). */
+  async settleCommitment(c: Commitment, dueDate: ISODate) {
+    const payId = `${c.id}:${dueDate}`;
+    if (await this.db.get('commitmentPayments', payId)) return;
+    await this.db.put('commitmentPayments', { id: payId, commitmentId: c.id, dueDate, txId: `settled:${payId}`, paidAt: Date.now(), demo: c.demo });
+  }
+
   async unpayCommitment(commitmentId: string, dueDate: ISODate) {
     const payId = `${commitmentId}:${dueDate}`;
     const p = (await this.db.get('commitmentPayments', payId)) as CommitmentPayment | undefined;

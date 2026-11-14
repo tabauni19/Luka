@@ -20,14 +20,30 @@ export function PayCommitmentSheet({ occ, onClose }: { occ: CommitmentOccurrence
     onClose();
   };
   return (
-    <Sheet title={`Pagar ${c.name}`} onClose={onClose} footer={<button className="btn primary block" disabled={!accountId} onClick={pay}>Marcar como pagado</button>}>
+    <Sheet
+      title={`Pagar ${c.name}`}
+      onClose={onClose}
+      footer={
+        <div className="col gap">
+          <button className="btn primary block" disabled={!accountId} onClick={pay}>Pagar ahora</button>
+          {occ.dueDate <= today && (
+            <button className="btn ghost block" onClick={async () => {
+              await mutate((r) => r.settleCommitment(c, occ.dueDate));
+              toast('Marcado como ya pagado (no cambia tus saldos)', { label: 'Deshacer', run: () => mutate((r) => r.unpayCommitment(c.id, occ.dueDate)) });
+              onClose();
+            }}>Ya lo había pagado antes</button>
+          )}
+        </div>
+      }
+    >
       <p>
         <Money value={c.amount} className="strong" /> · vence {formatHuman(occ.dueDate, today).toLowerCase()}
       </p>
       <p className="muted small">
         {c.cardAccountId ? 'Se registra como pago de tarjeta (transferencia): baja la deuda y no suma a tus gastos.' : 'Se registra el gasto y deja de contarse como pendiente: se descuenta una sola vez.'}
       </p>
-      <Field label="¿Con qué cuenta pagaste?">
+      {occ.dueDate <= today && <p className="muted small">Si ya lo pagaste antes de usar Luka (y tus saldos ya lo reflejan), toca «Ya lo había pagado antes»: deja de estar pendiente sin mover plata.</p>}
+      <Field label="¿Con qué cuenta pagas?">
         <AccountSelect accounts={data.accounts} value={accountId} onChange={setAccountId} filter={(a) => a.type !== 'credit' || !c.cardAccountId} exclude={c.cardAccountId} />
       </Field>
     </Sheet>

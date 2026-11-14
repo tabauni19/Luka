@@ -172,6 +172,31 @@ describe('disponible hasta el próximo pago', () => {
     expect(commitmentOccurrences(d, '2027-02-01', '2027-03-01', TODAY).map((o) => o.dueDate)).toEqual(['2027-02-15', '2027-02-28']);
   });
 
+  it('un compromiso nuevo no cuenta como vencidas las fechas anteriores a su creación', async () => {
+    await repo.saveSettings({ payDays: [15, 30] });
+    const created = Date.parse('2026-11-13T23:00:00Z'); // 13 nov, 6 p. m. Bogotá
+    const c: Commitment = { id: 'nu-q', name: 'Pago Nu', amount: 150_000, dayOfMonth: 15, secondDay: 30, cardAccountId: 'nu', accountId: 'bc', active: true, createdAt: created };
+    await repo.put('commitments', c);
+    const av = availability(await repo.load(), TODAY);
+    expect(av.pending).toHaveLength(0); // el 30 oct es anterior; el 15 nov es de la próxima quincena
+    expect(av.available).toBe(1_050_000);
+  });
+
+  it('"ya lo había pagado" saca la ocurrencia de pendientes sin mover saldos', async () => {
+    await repo.saveSettings({ payDays: [15, 30] });
+    const c: Commitment = { id: 'old', name: 'Pago Nu', amount: 150_000, dayOfMonth: 30, cardAccountId: 'nu', accountId: 'bc', active: true };
+    await repo.put('commitments', c);
+    let d = await repo.load();
+    expect(availability(d, TODAY).pendingCommitments).toBe(150_000);
+    await repo.settleCommitment(c, '2026-10-30');
+    d = await repo.load();
+    expect(availability(d, TODAY).pendingCommitments).toBe(0);
+    expect(d.transactions).toHaveLength(0);
+    expect(totals(d).liquid).toBe(1_050_000);
+    await repo.unpayCommitment('old', '2026-10-30');
+    expect(availability(await repo.load(), TODAY).pendingCommitments).toBe(150_000);
+  });
+
   it('sin fecha de pago pide configurarla', async () => {
     const av = availability(await repo.load(), TODAY);
     expect(av.nextPay).toBeNull();
