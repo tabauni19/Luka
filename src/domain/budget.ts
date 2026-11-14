@@ -99,11 +99,13 @@ export function commitmentOccurrences(
     for (let k = 0; k <= 13; k++) {
       const first = addMonths(clampDay(y, m, 1), k);
       const p = parseISO(first);
-      const due = clampDay(p.y, p.m, c.dayOfMonth);
-      if (due >= to) break;
-      if (due < from) continue;
-      const isPaid = paid.has(`${c.id}:${due}`);
-      out.push({ commitment: c, dueDate: due, paid: isPaid, overdue: !isPaid && due < today });
+      if (clampDay(p.y, p.m, 1) >= to) break;
+      const days = [...new Set([c.dayOfMonth, ...(c.secondDay ? [c.secondDay] : [])].map((d) => clampDay(p.y, p.m, d)))];
+      for (const due of days) {
+        if (due >= to || due < from) continue;
+        const isPaid = paid.has(`${c.id}:${due}`);
+        out.push({ commitment: c, dueDate: due, paid: isPaid, overdue: !isPaid && due < today });
+      }
     }
   }
   return out.sort((a, b) => (a.dueDate < b.dueDate ? -1 : 1));

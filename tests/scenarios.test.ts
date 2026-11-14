@@ -158,6 +158,20 @@ describe('disponible hasta el próximo pago', () => {
     expect(av.shortfall).toBe(0);
   });
 
+  it('compromiso quincenal: dos ocurrencias al mes, cada una se paga una vez', async () => {
+    const { commitmentOccurrences } = await import('../src/domain/budget');
+    const c: Commitment = { id: 'nu-q', name: 'Pago Nu', amount: 50_000, dayOfMonth: 15, secondDay: 30, cardAccountId: 'nu', accountId: 'bc', active: true };
+    await repo.put('commitments', c);
+    let d = await repo.load();
+    const occ = commitmentOccurrences(d, '2026-11-01', '2026-12-01', TODAY);
+    expect(occ.map((o) => o.dueDate)).toEqual(['2026-11-15', '2026-11-30']);
+    await repo.payCommitment(c, '2026-11-15', 'bc', TODAY);
+    d = await repo.load();
+    expect(commitmentOccurrences(d, '2026-11-01', '2026-12-01', TODAY).map((o) => o.paid)).toEqual([true, false]);
+    // febrero: el 30 se recorta al 28
+    expect(commitmentOccurrences(d, '2027-02-01', '2027-03-01', TODAY).map((o) => o.dueDate)).toEqual(['2027-02-15', '2027-02-28']);
+  });
+
   it('sin fecha de pago pide configurarla', async () => {
     const av = availability(await repo.load(), TODAY);
     expect(av.nextPay).toBeNull();

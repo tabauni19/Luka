@@ -69,6 +69,8 @@ export interface Commitment {
   amount: number;
   /** Día del mes en que se paga (1-31; si el mes es más corto se usa el último día). */
   dayOfMonth: number;
+  /** Segundo día del mes si se paga dos veces al mes (quincenal). */
+  secondDay?: number;
   categoryId?: string;
   /** Cuenta con la que se paga normalmente. */
   accountId?: string;

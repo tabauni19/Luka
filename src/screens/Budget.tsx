@@ -64,6 +64,8 @@ function CommitmentForm({ c, onClose }: { c?: Commitment; onClose: () => void })
   const [name, setName] = useState(c?.name ?? '');
   const [amount, setAmount] = useState<number | null>(c?.amount ?? null);
   const [day, setDay] = useState(c?.dayOfMonth ?? 1);
+  const [twice, setTwice] = useState(!!c?.secondDay);
+  const [day2, setDay2] = useState(c?.secondDay ?? 30);
   const [isCard, setIsCard] = useState(!!c?.cardAccountId);
   const [card, setCard] = useState(c?.cardAccountId);
   const [accountId, setAccountId] = useState(c?.accountId);
@@ -73,7 +75,7 @@ function CommitmentForm({ c, onClose }: { c?: Commitment; onClose: () => void })
 
   const save = async () => {
     if (!valid) return;
-    const v: Commitment = { id: c?.id ?? uid(), name: name.trim(), amount: amount!, dayOfMonth: day, categoryId: isCard ? undefined : categoryId, accountId, cardAccountId: isCard ? card : undefined, active: true, demo: c?.demo };
+    const v: Commitment = { id: c?.id ?? uid(), name: name.trim(), amount: amount!, dayOfMonth: day, secondDay: twice && day2 !== day ? day2 : undefined, categoryId: isCard ? undefined : categoryId, accountId, cardAccountId: isCard ? card : undefined, active: true, demo: c?.demo };
     await mutate((r) => r.put('commitments', v));
     toast(c ? 'Compromiso actualizado' : 'Compromiso agregado');
     onClose();
@@ -86,10 +88,20 @@ function CommitmentForm({ c, onClose }: { c?: Commitment; onClose: () => void })
   return (
     <Sheet title={c ? 'Editar compromiso' : 'Nuevo compromiso'} onClose={onClose} footer={<div className="row gap">{c && <button className="btn ghost danger" onClick={remove}><Icon name="trash" size={16} /></button>}<button className="btn primary grow" disabled={!valid} onClick={save}>Guardar</button></div>}>
       <Field label="Nombre"><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Arriendo, plan del celular, gym…" autoFocus={!c} /></Field>
-      <div className="grid2">
-        <Field label="Monto"><AmountInput value={amount} onChange={setAmount} /></Field>
-        <Field label="Día del mes"><input type="number" min={1} max={31} value={day} onChange={(e) => setDay(Math.min(31, Math.max(1, Number(e.target.value) || 1)))} /></Field>
+      <Field label={twice ? 'Monto de cada pago' : 'Monto'}><AmountInput value={amount} onChange={setAmount} /></Field>
+      <Field label="¿Cada cuánto?">
+        <select value={twice ? '2' : '1'} onChange={(e) => setTwice(e.target.value === '2')}>
+          <option value="1">Una vez al mes</option>
+          <option value="2">Dos veces al mes (quincenal)</option>
+        </select>
+      </Field>
+      <div className={twice ? 'grid2' : ''}>
+        <Field label={twice ? 'Primer día' : 'Día del mes'}><input type="number" min={1} max={31} value={day} onChange={(e) => setDay(Math.min(31, Math.max(1, Number(e.target.value) || 1)))} /></Field>
+        {twice && <Field label="Segundo día"><input type="number" min={1} max={31} value={day2} onChange={(e) => setDay2(Math.min(31, Math.max(1, Number(e.target.value) || 1)))} /></Field>}
       </div>
+      {twice && data.settings.payDays.length === 2 && (day !== data.settings.payDays[0] || day2 !== data.settings.payDays[1]) && (
+        <button className="link" onClick={() => { setDay(data.settings.payDays[0]); setDay2(data.settings.payDays[1]); }}>Usar mis días de pago ({data.settings.payDays.join(' y ')})</button>
+      )}
       {hasCards && (
         <label className="check"><input type="checkbox" checked={isCard} onChange={(e) => setIsCard(e.target.checked)} /> Es el pago de una tarjeta de crédito</label>
       )}
@@ -154,7 +166,7 @@ export function BudgetScreen({ onPickCategory }: { onPickCategory: (id: string) 
             <summary>Todos los compromisos ({data.commitments.length})</summary>
             <ul className="plain-list">
               {data.commitments.map((c) => (
-                <li key={c.id}><button className="link-plain row between full" onClick={() => setEditC(c)}><span>{c.name} · día {c.dayOfMonth}</span><Money value={c.amount} /></button></li>
+                <li key={c.id}><button className="link-plain row between full" onClick={() => setEditC(c)}><span>{c.name} · {c.secondDay ? `días ${c.dayOfMonth} y ${c.secondDay}` : `día ${c.dayOfMonth}`}</span><Money value={c.amount} /></button></li>
               ))}
             </ul>
           </details>
