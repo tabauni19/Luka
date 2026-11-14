@@ -10,7 +10,16 @@ import { AutoCapture, isNative, syncCaptures } from '../native/autoCapture';
 import { useApp } from '../state';
 import { AccountSelect, confirmAsk, Icon, Money, Segmented, Sheet } from '../ui/kit';
 
-function download(name: string, content: string, type: string) {
+/** En el navegador descarga el archivo; en la app Android (donde no hay descargas)
+ *  lo guarda en caché y abre «Compartir» para mandarlo a Drive, Archivos, WhatsApp… */
+async function download(name: string, content: string, type: string): Promise<'downloaded' | 'shared'> {
+  if (isNative()) {
+    const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem');
+    const { Share } = await import('@capacitor/share');
+    const res = await Filesystem.writeFile({ path: name, data: content, directory: Directory.Cache, encoding: Encoding.UTF8 });
+    await Share.share({ title: name, files: [res.uri] });
+    return 'shared';
+  }
   const blob = new Blob([content], { type });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -20,6 +29,7 @@ function download(name: string, content: string, type: string) {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return 'downloaded';
 }
 
 function AutoCaptureSection() {
@@ -160,14 +170,17 @@ export function SettingsSheet({ onClose, onNewAccount, onOpenAccount }: { onClos
   const bal = accountBalances(data.accounts, data.transactions);
   const hasDemo = data.settings.demoMode || data.accounts.some((a) => a.demo);
 
-  const exportCSV = () => {
-    download(`luka-movimientos-${today}.csv`, transactionsToCSV(data), 'text/csv;charset=utf-8');
-    toast('CSV descargado');
+  const save = async (name: string, content: string, type: string, what: string) => {
+    try {
+      const how = await download(name, content, type);
+      toast(how === 'shared' ? `${what} listo: guárdalo en Drive o Archivos` : `${what} descargado`);
+    } catch (e) {
+      const msg = (e as Error).message ?? '';
+      if (!/cancel/i.test(msg)) toast(`No se pudo guardar: ${msg}`);
+    }
   };
-  const backup = async () => {
-    download(`luka-respaldo-${today}.json`, JSON.stringify(await repo.exportAll(), null, 2), 'application/json');
-    toast('Respaldo descargado');
-  };
+  const exportCSV = () => save(`luka-movimientos-${today}.csv`, transactionsToCSV(data), 'text/csv;charset=utf-8', 'CSV');
+  const backup = async () => save(`luka-respaldo-${today}.json`, JSON.stringify(await repo.exportAll(), null, 2), 'application/json', 'Respaldo');
   const restore = async (f: File) => {
     try {
       const raw = JSON.parse(await f.text());
