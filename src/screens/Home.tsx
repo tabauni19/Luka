@@ -212,7 +212,7 @@ export function HomeScreen(props: {
           ))}
         </ul>
         <div className="acc-total">
-          <span>Tienes</span><Money value={t.liquid} className="strong" />
+          <span>Tienes{av.excludedAccounts.length ? ` (sin ${av.excludedAccounts.join(', ')})` : ''}</span><Money value={av.liquid} className="strong" />
           {t.debt > 0 && <><span>Debes</span><Money value={t.debt} className="strong debt" /></>}
         </div>
       </section>
