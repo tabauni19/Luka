@@ -49,29 +49,55 @@ function PayDaysEditor() {
   );
 }
 
-function LimitEditor({ c, onClose }: { c: Category; onClose: () => void }) {
-  const { mutate, toast } = useApp();
-  const [v, setV] = useState<number | null>(c.biweeklyLimit || null);
+const NEW_COLORS = ['#E07A5F', '#81B29A', '#3D85C6', '#F2B544', '#9B5DE5', '#EF476F', '#06A77D', '#8D99AE'];
+const EMOJIS = ['🏷️', '☕', '🍔', '🎮', '🐶', '💇', '👕', '🎁', '📱', '🚌', '💊', '🎵'];
+
+/** Crear o editar una categoría de gasto: nombre, emoji y tope por quincena. */
+function CategoryEditor({ c, onClose }: { c?: Category; onClose: () => void }) {
+  const { data, mutate, toast } = useApp();
+  const [name, setName] = useState(c?.name ?? '');
+  const [emoji, setEmoji] = useState(c?.emoji ?? EMOJIS[0]);
+  const [v, setV] = useState<number | null>(c?.biweeklyLimit || null);
+  const taken = new Set(data.categories.filter((x) => x.id !== c?.id && x.kind === 'expense' && !x.hidden).map((x) => x.name.trim().toLowerCase()));
+  const valid = name.trim().length > 0 && !taken.has(name.trim().toLowerCase());
+  const save = async () => {
+    if (!valid) return;
+    const cat: Category = c
+      ? { ...c, name: name.trim(), emoji: emoji.trim() || c.emoji, biweeklyLimit: v ?? 0 }
+      : { id: uid(), name: name.trim(), emoji: emoji.trim() || EMOJIS[0], color: NEW_COLORS[data.categories.length % NEW_COLORS.length], kind: 'expense', biweeklyLimit: v ?? 0 };
+    await mutate((r) => r.put('categories', cat));
+    toast(c ? 'Categoría guardada' : `Categoría «${cat.name}» creada`);
+    onClose();
+  };
   const hide = async () => {
+    if (!c) return;
     await mutate((r) => r.put('categories', { ...c, hidden: true, biweeklyLimit: 0 }));
     toast(`«${c.name}» oculta`, { label: 'Deshacer', run: () => mutate((r) => r.put('categories', c)) });
     onClose();
   };
   return (
-    <Sheet title={`${c.emoji} ${c.name}`} onClose={onClose} footer={
+    <Sheet title={c ? `${c.emoji} ${c.name}` : 'Nueva categoría'} onClose={onClose} footer={
       <div className="col gap">
-        <button className="btn primary block" onClick={async () => { await mutate((r) => r.put('categories', { ...c, biweeklyLimit: v ?? 0 })); onClose(); }}>Guardar</button>
-        {c.biweeklyLimit > 0 && (
+        <button className="btn primary block" disabled={!valid} onClick={save}>Guardar</button>
+        {c && c.biweeklyLimit > 0 && (
           <button className="btn ghost danger block" onClick={async () => {
             await mutate((r) => r.put('categories', { ...c, biweeklyLimit: 0 }));
             toast(`Tope de ${c.name} eliminado`, { label: 'Deshacer', run: () => mutate((r) => r.put('categories', c)) });
             onClose();
           }}><Icon name="trash" size={16} /> Quitar tope</button>
         )}
-        <button className="btn ghost block" onClick={hide}><Icon name="eyeOff" size={16} /> Ocultar categoría (no la uso)</button>
+        {c && <button className="btn ghost block" onClick={hide}><Icon name="eyeOff" size={16} /> Ocultar categoría (no la uso)</button>}
       </div>
     }>
-      <Field label="Tope máximo por quincena" hint="Déjalo vacío para no tener tope."><AmountInput value={v} onChange={setV} autoFocus /></Field>
+      <Field label="Nombre"><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: Café, Mascota, Ropa" autoFocus={!c} maxLength={30} /></Field>
+      {name.trim() && !valid && <p className="warn-line">Ya tienes una categoría con ese nombre.</p>}
+      <Field label="Emoji" hint="Escoge uno o escribe el que quieras.">
+        <input value={emoji} onChange={(e) => setEmoji(e.target.value)} maxLength={4} style={{ width: '5rem', fontSize: '1.4rem', textAlign: 'center' }} />
+      </Field>
+      <div className="chips">
+        {EMOJIS.map((e) => <button key={e} className={`chip ${emoji === e ? 'on' : ''}`} onClick={() => setEmoji(e)} aria-label={`Emoji ${e}`}>{e}</button>)}
+      </div>
+      <Field label="Tope máximo por quincena (opcional)" hint="Déjalo vacío para no tener tope."><AmountInput value={v} onChange={setV} autoFocus={!!c} /></Field>
     </Sheet>
   );
 }
@@ -134,7 +160,7 @@ function CommitmentForm({ c, onClose }: { c?: Commitment; onClose: () => void })
 
 export function BudgetScreen({ onPickCategory }: { onPickCategory: (id: string) => void }) {
   const { data, today, mutate, toast } = useApp();
-  const [limitCat, setLimitCat] = useState<Category | null>(null);
+  const [limitCat, setLimitCat] = useState<Category | 'new' | null>(null);
   const [editC, setEditC] = useState<Commitment | 'new' | null>(null);
   const [paying, setPaying] = useState<CommitmentOccurrence | null>(null);
   const period = periodFor(today, data.settings.payDays);
@@ -198,7 +224,7 @@ export function BudgetScreen({ onPickCategory }: { onPickCategory: (id: string) 
           <h3 className="card-title">Topes por categoría</h3>
           {totalLimit > 0 && <span className="muted small"><Money value={totalSpentLimited} /> de <Money value={totalLimit} /></span>}
         </div>
-        <p className="muted small">Toca el monto para poner un tope u ocultar la categoría; toca el nombre para ver sus movimientos.</p>
+        <p className="muted small">Toca el monto para poner tope, cambiar el nombre u ocultarla; toca el nombre para ver sus movimientos.</p>
         <ul className="limits">
           {cats.map((c) => {
             const s = spent.get(c.id) ?? 0;
@@ -217,6 +243,7 @@ export function BudgetScreen({ onPickCategory }: { onPickCategory: (id: string) 
             );
           })}
         </ul>
+        <button className="link" onClick={() => setLimitCat('new')}>+ Nueva categoría</button>
         {hiddenCats.length > 0 && (
           <details className="all-commits">
             <summary>Categorías ocultas ({hiddenCats.length})</summary>
@@ -233,7 +260,7 @@ export function BudgetScreen({ onPickCategory }: { onPickCategory: (id: string) 
       </section>
       {av.nextPay && <p className="muted small center">Próximo pago: {formatShort(av.nextPay)}</p>}
 
-      {limitCat && <LimitEditor c={limitCat} onClose={() => setLimitCat(null)} />}
+      {limitCat && <CategoryEditor c={limitCat === 'new' ? undefined : limitCat} onClose={() => setLimitCat(null)} />}
       {editC && <CommitmentForm c={editC === 'new' ? undefined : editC} onClose={() => setEditC(null)} />}
       {paying && <PayCommitmentSheet occ={paying} onClose={() => setPaying(null)} />}
     </div>
