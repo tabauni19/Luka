@@ -82,3 +82,14 @@ describe('frase de ejemplo', () => {
     expect(d.map((x) => x.amount)).toEqual([2000, 500000]);
   });
 });
+
+describe('categorías ocultas', () => {
+  it('no se asignan automáticamente: cae en Otros', async () => {
+    const { categorize } = await import('../src/domain/categories');
+    const { DEFAULT_CATEGORIES } = await import('../src/domain/categories');
+    const visible = categorize('arriendo', 'expense', [], DEFAULT_CATEGORIES).categoryId;
+    expect(visible).not.toBe('otros');
+    const hidden = DEFAULT_CATEGORIES.map((c) => (c.id === visible ? { ...c, hidden: true } : c));
+    expect(categorize('arriendo', 'expense', [], hidden).categoryId).toBe('otros');
+  });
+});

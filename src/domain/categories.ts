@@ -52,7 +52,7 @@ export function categorize(
   categories: Category[]
 ): { categoryId: string; learned: boolean } {
   const text = normalize(description);
-  const valid = new Set(categories.filter((c) => c.kind === kind).map((c) => c.id));
+  const valid = new Set(categories.filter((c) => c.kind === kind && !c.hidden).map((c) => c.id));
 
   // 1) Reglas aprendidas: gana la clave más larga contenida en el texto.
   const key = ruleKey(description);

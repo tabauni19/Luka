@@ -136,7 +136,7 @@ export function CategorySelect({ categories, value, onChange, kind }: { categori
   return (
     <select value={value ?? ''} onChange={(e) => onChange(e.target.value)}>
       {categories
-        .filter((c) => c.kind === kind)
+        .filter((c) => c.kind === kind && (!c.hidden || c.id === value))
         .map((c) => (
           <option key={c.id} value={c.id}>
             {c.emoji} {c.name}

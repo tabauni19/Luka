@@ -52,8 +52,13 @@ function PayDaysEditor() {
 function LimitEditor({ c, onClose }: { c: Category; onClose: () => void }) {
   const { mutate, toast } = useApp();
   const [v, setV] = useState<number | null>(c.biweeklyLimit || null);
+  const hide = async () => {
+    await mutate((r) => r.put('categories', { ...c, hidden: true, biweeklyLimit: 0 }));
+    toast(`«${c.name}» oculta`, { label: 'Deshacer', run: () => mutate((r) => r.put('categories', c)) });
+    onClose();
+  };
   return (
-    <Sheet title={`Tope para ${c.emoji} ${c.name}`} onClose={onClose} footer={
+    <Sheet title={`${c.emoji} ${c.name}`} onClose={onClose} footer={
       <div className="col gap">
         <button className="btn primary block" onClick={async () => { await mutate((r) => r.put('categories', { ...c, biweeklyLimit: v ?? 0 })); onClose(); }}>Guardar</button>
         {c.biweeklyLimit > 0 && (
@@ -63,9 +68,10 @@ function LimitEditor({ c, onClose }: { c: Category; onClose: () => void }) {
             onClose();
           }}><Icon name="trash" size={16} /> Quitar tope</button>
         )}
+        <button className="btn ghost block" onClick={hide}><Icon name="eyeOff" size={16} /> Ocultar categoría (no la uso)</button>
       </div>
     }>
-      <Field label="Máximo por quincena" hint="Déjalo vacío para quitar el tope."><AmountInput value={v} onChange={setV} autoFocus /></Field>
+      <Field label="Tope máximo por quincena" hint="Déjalo vacío para no tener tope."><AmountInput value={v} onChange={setV} autoFocus /></Field>
     </Sheet>
   );
 }
@@ -135,7 +141,10 @@ export function BudgetScreen({ onPickCategory }: { onPickCategory: (id: string) 
   const spent = expensesByCategory(data.transactions, period.start, period.end);
   const av = availability(data, today);
   const occ = commitmentOccurrences(data, period.start, av.nextPay && av.nextPay > period.end ? av.nextPay : period.end, today);
-  const cats = data.categories.filter((c) => c.kind === 'expense');
+  const allCats = data.categories.filter((c) => c.kind === 'expense');
+  const hiddenCats = allCats.filter((c) => c.hidden);
+  // Una oculta sigue saliendo si tiene gastos en esta quincena, para que el total cuadre.
+  const cats = allCats.filter((c) => !c.hidden || (spent.get(c.id) ?? 0) > 0);
   const limited = cats.filter((c) => c.biweeklyLimit > 0);
   const totalLimit = limited.reduce((s, c) => s + c.biweeklyLimit, 0);
   const totalSpentLimited = limited.reduce((s, c) => s + (spent.get(c.id) ?? 0), 0);
@@ -189,7 +198,7 @@ export function BudgetScreen({ onPickCategory }: { onPickCategory: (id: string) 
           <h3 className="card-title">Topes por categoría</h3>
           {totalLimit > 0 && <span className="muted small"><Money value={totalSpentLimited} /> de <Money value={totalLimit} /></span>}
         </div>
-        <p className="muted small">Toca el monto para fijar un tope por quincena; toca el nombre para ver sus movimientos.</p>
+        <p className="muted small">Toca el monto para poner un tope u ocultar la categoría; toca el nombre para ver sus movimientos.</p>
         <ul className="limits">
           {cats.map((c) => {
             const s = spent.get(c.id) ?? 0;
@@ -208,6 +217,19 @@ export function BudgetScreen({ onPickCategory }: { onPickCategory: (id: string) 
             );
           })}
         </ul>
+        {hiddenCats.length > 0 && (
+          <details className="all-commits">
+            <summary>Categorías ocultas ({hiddenCats.length})</summary>
+            <ul className="plain-list">
+              {hiddenCats.map((c) => (
+                <li key={c.id} className="row between">
+                  <span>{c.emoji} {c.name}</span>
+                  <button className="btn tiny" onClick={async () => { await mutate((r) => r.put('categories', { ...c, hidden: undefined })); toast(`«${c.name}» visible otra vez`); }}>Mostrar</button>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
       </section>
       {av.nextPay && <p className="muted small center">Próximo pago: {formatShort(av.nextPay)}</p>}
 

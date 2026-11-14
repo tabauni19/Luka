@@ -56,6 +56,8 @@ export interface Category {
   kind: 'expense' | 'income';
   /** Tope de gasto por quincena (0 = sin tope). */
   biweeklyLimit: number;
+  /** Oculta: no sale en las listas para elegir ni en Presupuesto (sus movimientos se conservan). */
+  hidden?: boolean;
   demo?: boolean;
 }
 
