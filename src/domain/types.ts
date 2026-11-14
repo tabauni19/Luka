@@ -18,6 +18,8 @@ export interface Account {
   archived?: boolean;
   /** Ocultar el saldo en pantalla (privacidad). No cambia ningún cálculo. */
   hideBalance?: boolean;
+  /** true = esta cuenta NO suma al disponible de la quincena (p. ej. efectivo guardado). */
+  excludeFromAvailable?: boolean;
   demo?: boolean;
   createdAt: number;
 }

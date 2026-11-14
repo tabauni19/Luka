@@ -30,6 +30,7 @@ export function AccountForm({ account, onClose }: { account?: Account; onClose: 
   const [initial, setInitial] = useState<number | null>(account?.initialBalance ?? null);
   const [limit, setLimit] = useState<number | null>(account?.creditLimit ?? null);
   const [color, setColor] = useState(account?.color ?? COLORS[0]);
+  const [exclude, setExclude] = useState(!!account?.excludeFromAvailable);
   const isCredit = type === 'credit';
   const existingNames = new Set(data.accounts.filter((a) => a.id !== account?.id && !a.archived).map((a) => a.name.toLowerCase()));
   const valid = name.trim().length > 0 && !existingNames.has(name.trim().toLowerCase());
@@ -43,6 +44,8 @@ export function AccountForm({ account, onClose }: { account?: Account; onClose: 
       initialBalance: initial ?? 0,
       creditLimit: isCredit ? limit ?? undefined : undefined,
       color,
+      excludeFromAvailable: !isCredit && exclude ? true : undefined,
+      hideBalance: account?.hideBalance,
       demo: account?.demo,
       createdAt: account?.createdAt ?? Date.now()
     };
@@ -79,6 +82,11 @@ export function AccountForm({ account, onClose }: { account?: Account; onClose: 
           <AmountInput value={limit} onChange={setLimit} />
         </Field>
       )}
+      {!isCredit && (
+        <label className="check">
+          <input type="checkbox" checked={!exclude} onChange={(e) => setExclude(!e.target.checked)} /> Contar en el disponible de la quincena
+        </label>
+      )}
       <Field label="Color">
         <div className="colors">
           {COLORS.map((c) => (
@@ -114,6 +122,12 @@ export function AccountDetail({ accountId, onClose, onEditTx }: { accountId: str
         <span className="muted">{a.type === 'credit' ? 'Deuda actual' : 'Saldo'}</span>
         {a.hideBalance ? <span className="money big muted">$ •••••</span> : <Money value={bal} className="big" />}
         {a.type === 'credit' && a.creditLimit ? <span className="muted small">Cupo disponible: <Money value={a.creditLimit - bal} /></span> : null}
+        {a.type !== 'credit' && (
+          <label className="check small">
+            <input type="checkbox" checked={!a.excludeFromAvailable} onChange={(e) => mutate((r) => r.put('accounts', { ...a, excludeFromAvailable: e.target.checked ? undefined : true }))} />
+            Contar en el disponible de la quincena
+          </label>
+        )}
         <div className="row gap">
           <button className="btn ghost" onClick={() => setEditing(true)}>Editar</button>
           <button className="btn ghost danger" onClick={remove}><Icon name="trash" size={16} /> Eliminar</button>

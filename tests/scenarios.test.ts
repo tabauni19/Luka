@@ -197,6 +197,18 @@ describe('disponible hasta el próximo pago', () => {
     expect(availability(await repo.load(), TODAY).pendingCommitments).toBe(150_000);
   });
 
+  it('una cuenta excluida (efectivo) no suma al disponible pero sí a lo que tienes', async () => {
+    await repo.saveSettings({ payDays: [10, 25] });
+    const d0 = await repo.load();
+    const cash = d0.accounts.find((a) => a.id === 'cash')!;
+    await repo.put('accounts', { ...cash, excludeFromAvailable: true });
+    const d = await repo.load();
+    const av = availability(d, TODAY);
+    expect(av.available).toBe(1_000_000);
+    expect(av.excludedAccounts).toEqual(['Efectivo']);
+    expect(totals(d).liquid).toBe(1_050_000);
+  });
+
   it('sin fecha de pago pide configurarla', async () => {
     const av = availability(await repo.load(), TODAY);
     expect(av.nextPay).toBeNull();

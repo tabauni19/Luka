@@ -8,7 +8,7 @@
 // el movimiento), así que deja de contarse como pendiente. Así se descuenta UNA sola vez.
 
 import { addDays, addMonths, clampDay, diffDays, formatShort, parseISO, toBogotaDate } from './dates';
-import { totals } from './ledger';
+import { accountBalances } from './ledger';
 import type { AppData, Commitment, Goal, ISODate } from './types';
 
 export interface Period {
@@ -128,6 +128,8 @@ export interface Availability {
   reservedGoals: number;
   /** true si las metas no se están restando del disponible (ajuste del usuario). */
   goalsExcluded: boolean;
+  /** Nombres de cuentas que no suman al disponible. */
+  excludedAccounts: string[];
   pendingCommitments: number;
   pending: CommitmentOccurrence[];
   available: number;
@@ -140,7 +142,11 @@ export interface Availability {
 }
 
 export function availability(data: AppData, today: ISODate): Availability {
-  const { liquid } = totals(data);
+  // Solo cuentas normales que cuentan para el disponible (se pueden excluir, p. ej. el efectivo).
+  const bal = accountBalances(data.accounts, data.transactions);
+  const counted = data.accounts.filter((a) => !a.archived && a.type !== 'credit' && !a.excludeFromAvailable);
+  const liquid = counted.reduce((s, a) => s + (bal.get(a.id) ?? 0), 0);
+  const excludedAccounts = data.accounts.filter((a) => !a.archived && a.type !== 'credit' && a.excludeFromAvailable).map((a) => a.name);
   const goalsExcluded = data.settings.goalsReduceAvailable === false;
   const reservedGoals = goalsExcluded ? 0 : reservedForGoals(data);
   const nextPay = nextPayDate(today, data.settings);
@@ -151,6 +157,7 @@ export function availability(data: AppData, today: ISODate): Availability {
       liquid,
       reservedGoals,
       goalsExcluded,
+      excludedAccounts,
       pendingCommitments: 0,
       pending: [],
       available: liquid - reservedGoals,
@@ -172,6 +179,7 @@ export function availability(data: AppData, today: ISODate): Availability {
     liquid,
     reservedGoals,
     goalsExcluded,
+    excludedAccounts,
     pendingCommitments,
     pending,
     available,

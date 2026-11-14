@@ -140,7 +140,7 @@ export function HomeScreen(props: {
         </button>
         {showBreakdown && (
           <dl className="breakdown">
-            <div><dt>Saldo en cuentas</dt><dd><Money value={av.liquid} /></dd></div>
+            <div><dt>Saldo en cuentas{av.excludedAccounts.length ? ` (sin ${av.excludedAccounts.join(', ')})` : ''}</dt><dd><Money value={av.liquid} /></dd></div>
             {!av.goalsExcluded && <div><dt>− Separado para metas</dt><dd><Money value={-av.reservedGoals} /></dd></div>}
             <div><dt>− Compromisos pendientes</dt><dd><Money value={-av.pendingCommitments} /></dd></div>
             <div className="total"><dt>= Disponible</dt><dd><Money value={av.available} /></dd></div>
@@ -196,7 +196,7 @@ export function HomeScreen(props: {
             <li key={a.id}>
               <button className="acc" onClick={() => props.onOpenAccount(a.id)}>
                 <span className="acc-dot" style={{ background: a.color }} />
-                <span className="grow">{a.name}{a.type === 'credit' && <span className="muted small"> · deuda</span>}</span>
+                <span className="grow">{a.name}{a.type === 'credit' && <span className="muted small"> · deuda</span>}{a.excludeFromAvailable && <span className="muted small"> · aparte</span>}</span>
                 {a.hideBalance ? <span className="money muted">$ •••••</span> : <Money value={bal.get(a.id) ?? 0} className={a.type === 'credit' && (bal.get(a.id) ?? 0) > 0 ? 'debt' : ''} />}
                 <Icon name="chev" size={16} />
               </button>
