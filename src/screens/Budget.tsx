@@ -50,10 +50,21 @@ function PayDaysEditor() {
 }
 
 function LimitEditor({ c, onClose }: { c: Category; onClose: () => void }) {
-  const { mutate } = useApp();
+  const { mutate, toast } = useApp();
   const [v, setV] = useState<number | null>(c.biweeklyLimit || null);
   return (
-    <Sheet title={`Tope para ${c.emoji} ${c.name}`} onClose={onClose} footer={<button className="btn primary block" onClick={async () => { await mutate((r) => r.put('categories', { ...c, biweeklyLimit: v ?? 0 })); onClose(); }}>Guardar</button>}>
+    <Sheet title={`Tope para ${c.emoji} ${c.name}`} onClose={onClose} footer={
+      <div className="col gap">
+        <button className="btn primary block" onClick={async () => { await mutate((r) => r.put('categories', { ...c, biweeklyLimit: v ?? 0 })); onClose(); }}>Guardar</button>
+        {c.biweeklyLimit > 0 && (
+          <button className="btn ghost danger block" onClick={async () => {
+            await mutate((r) => r.put('categories', { ...c, biweeklyLimit: 0 }));
+            toast(`Tope de ${c.name} eliminado`, { label: 'Deshacer', run: () => mutate((r) => r.put('categories', c)) });
+            onClose();
+          }}><Icon name="trash" size={16} /> Quitar tope</button>
+        )}
+      </div>
+    }>
       <Field label="Máximo por quincena" hint="Déjalo vacío para quitar el tope."><AmountInput value={v} onChange={setV} autoFocus /></Field>
     </Sheet>
   );
